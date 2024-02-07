@@ -53,12 +53,9 @@ class ExBoostEngine {
   }
 
   initBackground() {
-    chrome.runtime.onMessage.addListener(function (
-      request,
-      sender,
-      sendResponse
-    ) {
-      fetch("https://api.extensionboost.com/serve")
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      console.log(this.extensionId);
+      fetch(`https://api.extensionboost.com/serve/${this.extensionId}`)
         .then((x) => x.text())
         .then((html) =>
           sendResponse({
