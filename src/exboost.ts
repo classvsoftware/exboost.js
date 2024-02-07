@@ -1,4 +1,4 @@
-const version = '1.0.0';
+const version = "1.0.0";
 
 console.log(`Version: ${version}`);
 
@@ -6,6 +6,7 @@ class ExBoostEngine {
   windowIsDefined: boolean;
   chromeGlobalIsDefined: boolean;
   usesExtensionProtocol: boolean;
+  extensionId: string | null;
 
   constructor() {
     this.windowIsDefined = typeof window !== "undefined";
@@ -13,31 +14,65 @@ class ExBoostEngine {
     this.usesExtensionProtocol = this.windowIsDefined
       ? window.location.protocol === "chrome-extension:"
       : false;
-    this.init();
-  }
 
-  init() {
-    console.log(this.getEnvironment());
-  }
+    this.extensionId = null;
 
-  getEnvironment() {
+    if (this.chromeGlobalIsDefined) {
+      this.extensionId = chrome.runtime.id;
+    }
+
     if (!this.windowIsDefined && this.chromeGlobalIsDefined) {
-      return "Running in background";
+      this.initBackground();
     } else if (
       this.windowIsDefined &&
       this.chromeGlobalIsDefined &&
       this.usesExtensionProtocol
     ) {
-      return "Running in extension page";
+      this.initExtensionPage();
     } else if (
       this.windowIsDefined &&
       this.chromeGlobalIsDefined &&
       !this.usesExtensionProtocol
     ) {
-      return "Running in content script";
+      this.initContentScript();
     } else {
-      return "Running in undefined context";
+      // Undefined context
     }
+  }
+
+  fillAllExboostIframes() {
+    const exboostFrames = document.querySelectorAll(
+      "iframe[exboost]"
+    ) as NodeListOf<HTMLIFrameElement>;
+
+    for (const exboostFrame of exboostFrames) {
+      chrome.runtime.sendMessage({ greeting: "hello" }, (response) => {
+        exboostFrame!.contentDocument!.body.innerHTML = response.html;
+      });
+    }
+  }
+
+  initBackground() {
+    chrome.runtime.onMessage.addListener(function (
+      request,
+      sender,
+      sendResponse
+    ) {
+      fetch("https://api.extensionboost.com/serve")
+        .then((x) => x.text())
+        .then((html) =>
+          sendResponse({
+            html,
+          })
+        );
+      return true;
+    });
+  }
+  initExtensionPage() {
+    this.fillAllExboostIframes();
+  }
+  initContentScript() {
+    this.fillAllExboostIframes();
   }
 }
 
