@@ -1,7 +1,6 @@
-const version = "1.1.1";
-console.log(`Version: ${version}`);
 class ExBoostEngine {
     constructor() {
+        this.version = "1.2.0";
         this.windowIsDefined = typeof window !== "undefined";
         this.chromeGlobalIsDefined = typeof chrome !== "undefined";
         this.usesExtensionProtocol = this.windowIsDefined
@@ -37,6 +36,7 @@ class ExBoostEngine {
         }
     }
     initBackground() {
+        console.log(`ExBoost v${this.version}`);
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log(this.extensionId);
             fetch(`https://api.extensionboost.com/serve/${this.extensionId}`)

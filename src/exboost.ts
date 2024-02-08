@@ -1,14 +1,12 @@
-const version = "VERSION_PLACEHOLDER";
-
-console.log(`Version: ${version}`);
-
 class ExBoostEngine {
+  version: string;
   windowIsDefined: boolean;
   chromeGlobalIsDefined: boolean;
   usesExtensionProtocol: boolean;
   extensionId: string | null;
 
   constructor() {
+    this.version = "VERSION_PLACEHOLDER";
     this.windowIsDefined = typeof window !== "undefined";
     this.chromeGlobalIsDefined = typeof chrome !== "undefined";
     this.usesExtensionProtocol = this.windowIsDefined
@@ -53,6 +51,8 @@ class ExBoostEngine {
   }
 
   initBackground() {
+    console.log(`ExBoost v${this.version}`);
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log(this.extensionId);
       fetch(`https://api.extensionboost.com/serve/${this.extensionId}`)
