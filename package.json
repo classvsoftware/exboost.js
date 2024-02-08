@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/exboost.js",
   "scripts": {
-    "prebuild": "node scripts/replaceVersion.js",
+    "postbuild": "node scripts/replaceVersion.js",
     "build": "tsc"
   },
   "repository": {

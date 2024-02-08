@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const packageJson = require("../package.json").version;
+const version = require("../package.json").version;
 
-const filePath = path.join(__dirname, "../src/exboost.ts");
+const filePath = path.join(__dirname, "../dist/exboost.js");
 let content = fs.readFileSync(filePath, { encoding: "utf8" });
-content = content.replace("VERSION_PLACEHOLDER", packageJson);
+content = content.replace("VERSION_PLACEHOLDER", version);
 
 fs.writeFileSync(filePath, content, { encoding: "utf8" });

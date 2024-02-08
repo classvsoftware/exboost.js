@@ -1,4 +1,4 @@
-const version = "1.1.0";
+const version = "VERSION_PLACEHOLDER";
 
 console.log(`Version: ${version}`);
 
