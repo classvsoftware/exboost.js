@@ -30,13 +30,7 @@ app/
 import "exboost.js";
 ```
 
-4. Import `exboost.js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI.
-
-```
-import "exboost.js";
-```
-
-5. Create any number of ExBoost slots by adding `<iframe exboost></iframe>` to your extension's HTML. Slots are responsive, resize the dimensions however you want.
+4. Create any number of ExBoost slots by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot. Slots are responsive, resize the dimensions however you want.
 
 ```
 <body>
@@ -51,8 +45,16 @@ import "exboost.js";
     <div>Extension content
   </section>
 
-  <iframe exboost></iframe>
+  <iframe data-exboost-slot="popup-slot-1"></iframe>
 </body>
+```
+
+5. Import `exboost.js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
+
+```
+import ExBoost from "exboost.js";
+
+ExBoost.init();
 ```
 
 ## Examples

@@ -1,9 +1,31 @@
+const EXBOOST_ATTRIBUTE = "data-exboost-slot";
+
+const API_VERSION = `v1`;
+const API_ORIGIN = `https://api.extensionboost.com/`;
+
+interface IServeMessage {
+  exboostSlotId: string;
+  engineContext: EngineContext;
+}
+
+enum EngineContext {
+  BACKGROUND = "BACKGROUND",
+  CONTENT_SCRIPT = "CONTENT_SCRIPT",
+  EXTENSION_PAGE = "EXTENSION_PAGE",
+  POPUP = "POPUP",
+  OPTIONS = "OPTIONS",
+  SIDEBAR = "SIDEBAR",
+  DEVELOPER_TOOLS = "DEVELOPER_TOOLS",
+  UNIDENTIFIED_CONTEXT = "UNIDENTIFIED_CONTEXT",
+}
+
 class ExBoostEngine {
   version: string;
   windowIsDefined: boolean;
   chromeGlobalIsDefined: boolean;
   usesExtensionProtocol: boolean;
   extensionId: string | null;
+  engineContext: EngineContext;
 
   constructor() {
     this.version = "VERSION_PLACEHOLDER";
@@ -20,55 +42,92 @@ class ExBoostEngine {
     }
 
     if (!this.windowIsDefined && this.chromeGlobalIsDefined) {
-      this.initBackground();
+      this.engineContext = EngineContext.BACKGROUND;
     } else if (
       this.windowIsDefined &&
       this.chromeGlobalIsDefined &&
       this.usesExtensionProtocol
     ) {
-      this.initExtensionPage();
+      this.engineContext = EngineContext.EXTENSION_PAGE;
     } else if (
       this.windowIsDefined &&
       this.chromeGlobalIsDefined &&
       !this.usesExtensionProtocol
     ) {
-      this.initContentScript();
+      this.engineContext = EngineContext.CONTENT_SCRIPT;
     } else {
-      // Undefined context
+      this.engineContext = EngineContext.UNIDENTIFIED_CONTEXT;
+    }
+
+    this.engineInit();
+  }
+
+  engineInit() {
+    switch (this.engineContext) {
+      case EngineContext.BACKGROUND:
+        this.initBackground();
+        break;
+      case EngineContext.CONTENT_SCRIPT:
+      case EngineContext.DEVELOPER_TOOLS:
+      case EngineContext.EXTENSION_PAGE:
+      case EngineContext.OPTIONS:
+      case EngineContext.POPUP:
+      default:
+        break;
     }
   }
 
   fillAllExboostIframes() {
     const exboostFrames = document.querySelectorAll(
-      "iframe[exboost]"
+      `iframe[${EXBOOST_ATTRIBUTE}]`
     ) as NodeListOf<HTMLIFrameElement>;
 
     for (const exboostFrame of exboostFrames) {
-      chrome.runtime.sendMessage({ greeting: "hello" }, (response) => {
+      // Slot ID is to identify the traffic on the server
+      const exboostSlotId = exboostFrame.getAttribute(EXBOOST_ATTRIBUTE);
+
+      if (!exboostSlotId) {
+        console.error("ExBoost slot is missing a slot ID");
+        return;
+      }
+
+      const message: IServeMessage = {
+        exboostSlotId,
+        engineContext: this.engineContext,
+      };
+
+      chrome.runtime.sendMessage(message, (response) => {
         exboostFrame!.contentDocument!.body.innerHTML = response.html;
       });
     }
   }
 
   initBackground() {
-    console.log(`ExBoost v${this.version}`);
+    chrome.runtime.onMessage.addListener(
+      (message: IServeMessage, sender, sendResponse) => {
+        fetch(
+          `${API_ORIGIN}/${API_VERSION}/serve/${this.extensionId}/${
+            message.engineContext
+          }/${message.exboostSlotId}?nonce=${Date.now()}`
+        )
+          .then((response) => {
+            if (response.status !== 200) {
+              // Don't fill the slot with an error response
+              return "";
+            }
 
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      console.log(this.extensionId);
-      fetch(`https://api.extensionboost.com/serve/${this.extensionId}`)
-        .then((x) => x.text())
-        .then((html) =>
-          sendResponse({
-            html,
+            return response.text();
           })
-        );
-      return true;
-    });
+          .then((html) =>
+            sendResponse({
+              html,
+            })
+          );
+        return true;
+      }
+    );
   }
-  initExtensionPage() {
-    this.fillAllExboostIframes();
-  }
-  initContentScript() {
+  init() {
     this.fillAllExboostIframes();
   }
 }

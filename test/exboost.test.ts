@@ -15,7 +15,7 @@ function setProtocol(protocol: string) {
 describe("ExBoostEngine", () => {
   let ExBoost: any;
 
-  // // Mock global objects
+  // Mock global objects
   beforeAll(() => {
     // Mock for `chrome.runtime.id` and `chrome.runtime.sendMessage`
     global.chrome = {
