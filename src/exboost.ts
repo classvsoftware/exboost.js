@@ -25,12 +25,16 @@ class ExBoostEngine {
   chromeGlobalIsDefined: boolean;
   usesExtensionProtocol: boolean;
   extensionId: string | null;
+  sessionId: string | null;
+  isManifestV2: boolean;
   engineContext: EngineContext;
 
   constructor() {
     this.version = "VERSION_PLACEHOLDER";
+    this.sessionId = null;
     this.windowIsDefined = typeof window !== "undefined";
     this.chromeGlobalIsDefined = typeof chrome !== "undefined";
+    this.isManifestV2 = chrome.runtime.getManifest().version === "2";
     this.usesExtensionProtocol = this.windowIsDefined
       ? window.location.protocol === "chrome-extension:"
       : false;
@@ -41,7 +45,14 @@ class ExBoostEngine {
       this.extensionId = chrome.runtime.id;
     }
 
-    if (!this.windowIsDefined && this.chromeGlobalIsDefined) {
+    if (
+      (!this.isManifestV2 &&
+        !this.windowIsDefined &&
+        this.chromeGlobalIsDefined) ||
+      (this.isManifestV2 &&
+        this.windowIsDefined &&
+        window === chrome.extension.getBackgroundPage())
+    ) {
       this.engineContext = EngineContext.BACKGROUND;
     } else if (
       this.windowIsDefined &&
@@ -103,13 +114,20 @@ class ExBoostEngine {
   }
 
   initBackground() {
+    this.sessionId = crypto.randomUUID();
+
     chrome.runtime.onMessage.addListener(
       (message: IServeMessage, sender, sendResponse) => {
-        fetch(
-          `${API_ORIGIN}/${API_VERSION}/serve/${this.extensionId}/${
-            message.engineContext
-          }/${message.exboostSlotId}?nonce=${Date.now()}`
-        )
+        const path = [
+          API_VERSION,
+          "serve",
+          this.extensionId,
+          this.sessionId,
+          message.engineContext,
+          message.exboostSlotId,
+        ].join("/");
+
+        fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}`)
           .then((response) => {
             if (response.status !== 200) {
               // Don't fill the slot with an error response
