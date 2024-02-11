@@ -14,7 +14,7 @@ var EngineContext;
 })(EngineContext || (EngineContext = {}));
 class ExBoostEngine {
     constructor() {
-        this.version = "1.4.0";
+        this.version = "1.5.0";
         this.sessionId = null;
         this.windowIsDefined = typeof window !== "undefined";
         this.chromeGlobalIsDefined = typeof chrome !== "undefined";
