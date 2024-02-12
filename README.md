@@ -12,7 +12,7 @@ ExBoost extensions add promotional banners inside their extensions. These banner
 
 ### Option 1: Using the NPM package (recommended)
 
-1. Install the `exboost-js` npm package.
+1. Install the [exboost-js](https://www.npmjs.com/package/exboost-js) npm package.
 
 2. Import `exboost-js` in your background script
 
