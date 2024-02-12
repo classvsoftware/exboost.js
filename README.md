@@ -10,27 +10,19 @@ ExBoost extensions add promotional banners inside their extensions. These banner
 
 ## Getting started
 
-1. Download [exboost.js](https://raw.githubusercontent.com/classvsoftware/exboost.js/master/dist/exboost.js)
-2. Add the `exboost.js` script to your extension.
+### Option 1: Using the NPM package (recommended)
+
+1. Install the `exboost-js` npm package.
+
+2. Import `exboost-js` in your background script
 
 ```
-app/
-├── manifest.json
-├── assets/
-│   ├── logo.png
-│   └── style.css
-├── lib/
-│   └── helper.js
-└── exboost.js
+import "exboost-js";
 ```
 
-3. Import `exboost.js` in your background script
+_background.js_
 
-```
-import "exboost.js";
-```
-
-4. Create any number of ExBoost slots by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot. Slots are responsive, resize the dimensions however you want.
+3. Define an ExBoost slot by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot.
 
 ```
 <body>
@@ -49,12 +41,87 @@ import "exboost.js";
 </body>
 ```
 
-5. Import `exboost.js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
+_popup.html_
+
+4. Import `exboost-js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
 
 ```
-import ExBoost from "exboost.js";
+import ExBoost from "exboost-js";
 
 ExBoost.init();
+```
+
+_popup.js_
+
+### Option 2: Include the JS file directly
+
+1. Download [exboost.js](https://raw.githubusercontent.com/classvsoftware/exboost.js/master/dist/exboost.js) and add it to your extension.
+
+```
+app/
+├── manifest.json
+├── popup.html
+├── options.html
+└── scripts/
+    ├── background.js
+    └── exboost.js
+```
+
+2. Import `exboost.js` in your background script
+
+```
+import "scripts/exboost.js";
+```
+
+_background.js_
+
+3. Define an ExBoost slot by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot.
+
+```
+<body>
+  <head>
+    iframe {
+      width: 600px;
+      height: 180px;
+    }
+  </head>
+  <section>
+    <h1>My extension!</h1>
+    <div>Extension content
+  </section>
+
+  <iframe data-exboost-slot="popup-slot-1"></iframe>
+</body>
+```
+
+_popup.html_
+
+4. Import `exboost.js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
+
+```
+import ExBoost from "scripts/exboost.js";
+
+ExBoost.init();
+```
+
+_popup.js_
+
+## Using ExBoost with React
+
+`ExBoost.init()` should be called after the `<iframe>` exists. Example:
+
+```
+const MyComponent = () => {
+  useEffect(() => {
+    ExBoost.init();
+  }, []);
+
+  return (
+    <div>
+      <iframe data-exboost-slot="popup-header-slot"></iframe>
+    </div>
+  );
+};
 ```
 
 ## Examples
