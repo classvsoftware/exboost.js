@@ -1,7 +1,7 @@
 const EXBOOST_ATTRIBUTE = "data-exboost-slot";
 
 const API_VERSION = `v1`;
-const API_ORIGIN = `https://api.extensionboost.com/`;
+const API_ORIGIN = `https://api.extensionboost.com`;
 
 interface IServeMessage {
   exboostSlotId: string;
