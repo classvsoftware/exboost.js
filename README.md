@@ -106,6 +106,10 @@ ExBoost.init();
 
 _popup.js_
 
+## Troubleshooting
+
+Having trouble? Enable debug mode with `ExBoost.init({ debug: true })`. ExBoost will log to the console.
+
 ## Using ExBoost with React
 
 `ExBoost.init()` should be called after the `<iframe>` exists. Example:

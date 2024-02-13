@@ -6,6 +6,14 @@ const API_ORIGIN = `https://api.extensionboost.com/`;
 interface IServeMessage {
   exboostSlotId: string;
   engineContext: EngineContext;
+  slotStyle: {
+    initialSlotWidth: string;
+    initialSlotHeight: string;
+    slotBackgroundColor: string;
+    slotFontColor: string;
+    slotFontSize: string;
+    slotFontFamily: string;
+  };
   options: IExBoostOptions;
 }
 
@@ -113,10 +121,11 @@ class ExBoostEngine {
         continue;
       }
 
-      if (options.debug) {
-        const frameWidth = exboostFrame.offsetWidth;
-        const frameHeight = exboostFrame.offsetHeight;
+      const frameWidth = exboostFrame.offsetWidth;
+      const frameHeight = exboostFrame.offsetHeight;
+      const computedStyle = window.getComputedStyle(exboostFrame);
 
+      if (options.debug) {
         if (frameWidth < 50 || frameHeight < 50) {
           `Frame ${exboostSlotId} is too small and will not render: ${frameWidth}x${frameHeight}`;
         }
@@ -133,6 +142,14 @@ class ExBoostEngine {
       const message: IServeMessage = {
         exboostSlotId,
         engineContext: this.engineContext,
+        slotStyle: {
+          initialSlotWidth: frameWidth.toString(),
+          initialSlotHeight: frameHeight.toString(),
+          slotBackgroundColor: computedStyle.backgroundColor,
+          slotFontColor: computedStyle.color,
+          slotFontSize: computedStyle.fontSize,
+          slotFontFamily: computedStyle.fontFamily,
+        },
         options: {},
       };
 
@@ -164,7 +181,9 @@ class ExBoostEngine {
           message.exboostSlotId,
         ].join("/");
 
-        fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}`)
+        const params = new URLSearchParams(message.slotStyle);
+
+        fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
           .then((response) => {
             if (response.status !== 200) {
               // Don't fill the slot with an error response
