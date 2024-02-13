@@ -101,6 +101,10 @@ class ExBoostEngine {
     }
   }
 
+  private isSlotFilled(element: HTMLIFrameElement): boolean {
+    return element!.contentDocument!.body.innerHTML.length > 0;
+  }
+
   private fillAllExboostIframes(options: IExBoostOptions = {}) {
     const exboostFrames = document.querySelectorAll(
       `iframe[${EXBOOST_ATTRIBUTE}]`
@@ -110,6 +114,7 @@ class ExBoostEngine {
       console.log(`Detected ${exboostFrames.length} ExBoost frames`);
     }
 
+    const slotIds = new Set<string>();
     for (const exboostFrame of exboostFrames) {
       // Slot ID is to identify the traffic on the server
       const exboostSlotId = exboostFrame.getAttribute(EXBOOST_ATTRIBUTE);
@@ -120,6 +125,12 @@ class ExBoostEngine {
         }
         continue;
       }
+
+      if (slotIds.has(exboostSlotId)) {
+        console.error(`Detected duplicate ExBoost slot id: ${exboostSlotId}`);
+      }
+
+      slotIds.add(exboostSlotId);
 
       const frameWidth = exboostFrame.offsetWidth;
       const frameHeight = exboostFrame.offsetHeight;
@@ -132,7 +143,7 @@ class ExBoostEngine {
       }
 
       // Frame has already been filled
-      if (exboostFrame!.contentDocument!.body.innerHTML.length > 0) {
+      if (this.isSlotFilled(exboostFrame)) {
         if (options.debug) {
           console.log(`Frame ${exboostSlotId} is already filled, skipping`);
         }
@@ -181,7 +192,10 @@ class ExBoostEngine {
           message.exboostSlotId,
         ].join("/");
 
-        const params = new URLSearchParams(message.slotStyle);
+        const params = new URLSearchParams({
+          version: this.version,
+          ...message.slotStyle,
+        });
 
         fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
           .then((response) => {
