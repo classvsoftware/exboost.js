@@ -183,6 +183,11 @@ class ExBoostEngine {
 
     chrome.runtime.onMessage.addListener(
       (message: IServeMessage, sender, sendResponse) => {
+        if (!Object.keys(message).includes("exboostSlotId")) {
+          // This is not an exboost message
+          return;
+        }
+
         const path = [
           API_VERSION,
           "serve",
