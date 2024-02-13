@@ -14,7 +14,7 @@ var EngineContext;
 })(EngineContext || (EngineContext = {}));
 class ExBoostEngine {
     constructor() {
-        this.version = "1.8.0";
+        this.version = "1.9.0";
         this.sessionId = null;
         this.windowIsDefined = typeof window !== "undefined";
         this.chromeGlobalIsDefined = typeof chrome !== "undefined";
@@ -129,7 +129,6 @@ class ExBoostEngine {
     initBackground() {
         this.sessionId = crypto.randomUUID();
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            console.log({ message });
             if (!Object.keys(message).includes("exboostSlotId")) {
                 // This is not an exboost message
                 return;
