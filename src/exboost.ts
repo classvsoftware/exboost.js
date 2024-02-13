@@ -194,6 +194,7 @@ class ExBoostEngine {
 
         const params = new URLSearchParams({
           version: this.version,
+          publisherExtensionName: chrome.runtime.getManifest().name,
           ...message.slotStyle,
         });
 
