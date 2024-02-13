@@ -14,7 +14,7 @@ var EngineContext;
 })(EngineContext || (EngineContext = {}));
 class ExBoostEngine {
     constructor() {
-        this.version = "1.6.0";
+        this.version = "1.7.0";
         this.sessionId = null;
         this.windowIsDefined = typeof window !== "undefined";
         this.chromeGlobalIsDefined = typeof chrome !== "undefined";
@@ -137,7 +137,7 @@ class ExBoostEngine {
                 message.engineContext,
                 message.exboostSlotId,
             ].join("/");
-            const params = new URLSearchParams(Object.assign({ version: this.version }, message.slotStyle));
+            const params = new URLSearchParams(Object.assign({ version: this.version, publisherExtensionName: chrome.runtime.getManifest().name }, message.slotStyle));
             fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
                 .then((response) => {
                 if (response.status !== 200) {
