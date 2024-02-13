@@ -6,6 +6,11 @@ const API_ORIGIN = `https://api.extensionboost.com/`;
 interface IServeMessage {
   exboostSlotId: string;
   engineContext: EngineContext;
+  options: IExBoostOptions;
+}
+
+interface IExBoostOptions {
+  debug?: boolean;
 }
 
 enum EngineContext {
@@ -73,7 +78,7 @@ class ExBoostEngine {
     this.engineInit();
   }
 
-  engineInit() {
+  private engineInit() {
     switch (this.engineContext) {
       case EngineContext.BACKGROUND:
         this.initBackground();
@@ -88,32 +93,64 @@ class ExBoostEngine {
     }
   }
 
-  fillAllExboostIframes() {
+  private fillAllExboostIframes(options: IExBoostOptions = {}) {
     const exboostFrames = document.querySelectorAll(
       `iframe[${EXBOOST_ATTRIBUTE}]`
     ) as NodeListOf<HTMLIFrameElement>;
+
+    if (options.debug) {
+      console.log(`Detected ${exboostFrames.length} ExBoost frames`);
+    }
 
     for (const exboostFrame of exboostFrames) {
       // Slot ID is to identify the traffic on the server
       const exboostSlotId = exboostFrame.getAttribute(EXBOOST_ATTRIBUTE);
 
       if (!exboostSlotId) {
-        console.error("ExBoost slot is missing a slot ID");
-        return;
+        if (options.debug) {
+          console.error("ExBoost slot is missing a slot ID");
+        }
+        continue;
+      }
+
+      if (options.debug) {
+        const frameWidth = exboostFrame.offsetWidth;
+        const frameHeight = exboostFrame.offsetHeight;
+
+        if (frameWidth < 50 || frameHeight < 50) {
+          `Frame ${exboostSlotId} is too small and will not render: ${frameWidth}x${frameHeight}`;
+        }
+      }
+
+      // Frame has already been filled
+      if (exboostFrame!.contentDocument!.body.innerHTML.length > 0) {
+        if (options.debug) {
+          console.log(`Frame ${exboostSlotId} is already filled, skipping`);
+        }
+        continue;
       }
 
       const message: IServeMessage = {
         exboostSlotId,
         engineContext: this.engineContext,
+        options: {},
       };
 
       chrome.runtime.sendMessage(message, (response) => {
         exboostFrame!.contentDocument!.body.innerHTML = response.html;
+
+        if (options.debug) {
+          if (response.html.length > 0) {
+            console.log(`Successfully filled ${exboostSlotId}`);
+          } else {
+            console.log(`Declined to fill ${exboostSlotId}`);
+          }
+        }
       });
     }
   }
 
-  initBackground() {
+  private initBackground() {
     this.sessionId = crypto.randomUUID();
 
     chrome.runtime.onMessage.addListener(
@@ -141,12 +178,19 @@ class ExBoostEngine {
               html,
             })
           );
+
+        // Indicate that a response is coming
         return true;
       }
     );
   }
-  init() {
-    this.fillAllExboostIframes();
+
+  init(options: IExBoostOptions = {}) {
+    if (options.debug) {
+      console.log(`Engine context: ${this.engineContext}`);
+    }
+
+    this.fillAllExboostIframes(options);
   }
 }
 
