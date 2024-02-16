@@ -24,7 +24,7 @@ module.exports = [
     },
     target: "node", // Optimize the bundle for Node.js
     optimization: {
-      minimize: false, // Optional: Disable minimization for debugging purposes
+      minimize: true, // Optional: Disable minimization for debugging purposes
     },
   },
   {
@@ -55,7 +55,7 @@ module.exports = [
     },
     target: "web",
     optimization: {
-      minimize: false,
+      minimize: true,
     },
   },
 ];

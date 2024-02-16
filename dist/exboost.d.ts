@@ -20,10 +20,12 @@ declare class ExBoostEngine {
     sessionId: string | null;
     isManifestV2: boolean;
     engineContext: EngineContext;
+    installSignature: string | null;
     constructor();
     private engineInit;
     private isSlotFilled;
     private fillAllExboostIframes;
+    private generateInstallSignature;
     private initBackground;
     init(options?: IExBoostOptions): void;
 }
