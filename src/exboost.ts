@@ -41,12 +41,10 @@ class ExBoostEngine {
   sessionId: string | null;
   isManifestV2: boolean;
   engineContext: EngineContext;
-  installSignature: string | null;
 
   constructor() {
     this.version = "VERSION_PLACEHOLDER";
     this.sessionId = null;
-    this.installSignature = null;
     this.windowIsDefined = typeof window !== "undefined";
     this.chromeGlobalIsDefined = typeof chrome !== "undefined";
     this.isManifestV2 = chrome.runtime.getManifest().version === "2";
@@ -180,43 +178,6 @@ class ExBoostEngine {
     }
   }
 
-  private async generateInstallSignature() {
-    if (!OffscreenCanvas) {
-      return "NOOFFSCREENCANVAS";
-    }
-
-    const canvas = new OffscreenCanvas(300, 300);
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      return "NOCONTEXT";
-    }
-
-    ctx.font = "14px 'Arial'";
-    ctx.fillStyle = "#f60";
-    ctx.fillRect(125, 1, 62, 20);
-    ctx.fillStyle = "#069";
-    ctx.fillText("exboost.65@345876", 2, 15);
-    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-    ctx.fillText("exboost.65@345876", 4, 17);
-
-    const blob = await (canvas.convertToBlob
-      ? canvas.convertToBlob()
-      : // @ts-ignore
-        canvas.toBlob());
-    const dataURL = await blob.text();
-    const data = new TextEncoder().encode(dataURL);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    this.installSignature = hashHex;
-
-    console.log(hashHex);
-  }
-
   private initBackground() {
     this.sessionId = crypto.randomUUID();
 
@@ -261,8 +222,6 @@ class ExBoostEngine {
         return true;
       }
     );
-
-    this.generateInstallSignature();
   }
 
   init(options: IExBoostOptions = {}) {
