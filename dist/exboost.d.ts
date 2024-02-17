@@ -1,33 +1,33 @@
 interface IExBoostOptions {
     debug?: boolean;
 }
-declare enum EngineContext {
-    BACKGROUND = "BACKGROUND",
-    CONTENT_SCRIPT = "CONTENT_SCRIPT",
-    EXTENSION_PAGE = "EXTENSION_PAGE",
-    POPUP = "POPUP",
-    OPTIONS = "OPTIONS",
-    SIDEBAR = "SIDEBAR",
-    DEVELOPER_TOOLS = "DEVELOPER_TOOLS",
-    UNIDENTIFIED_CONTEXT = "UNIDENTIFIED_CONTEXT"
+export interface IExBoostSlotData {
+    anchorData: {
+        href: string;
+        text: string;
+    }[];
 }
 declare class ExBoostEngine {
-    version: string;
-    windowIsDefined: boolean;
-    chromeGlobalIsDefined: boolean;
-    usesExtensionProtocol: boolean;
-    extensionId: string | null;
-    sessionId: string | null;
-    isManifestV2: boolean;
-    engineContext: EngineContext;
-    installSignature: string | null;
+    private version;
+    private windowIsDefined;
+    private chromeGlobalIsDefined;
+    private usesExtensionProtocol;
+    private extensionId;
+    private sessionId;
+    private isManifestV2;
+    private engineContext;
     constructor();
     private engineInit;
-    private isSlotFilled;
-    private fillAllExboostIframes;
-    private generateInstallSignature;
+    renderSlotDataOrError({ exboostSlotId, target, containerClass, linkClass, }: {
+        exboostSlotId: string;
+        target: HTMLElement;
+        containerClass?: string;
+        linkClass?: string;
+    }, options?: IExBoostOptions): Promise<void>;
+    loadSlotDataOrError({ exboostSlotId }: {
+        exboostSlotId: string;
+    }, options?: IExBoostOptions): Promise<IExBoostSlotData>;
     private initBackground;
-    init(options?: IExBoostOptions): void;
 }
 declare const ExBoost: ExBoostEngine;
 export default ExBoost;

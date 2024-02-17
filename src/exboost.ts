@@ -1,16 +1,14 @@
-const EXBOOST_ATTRIBUTE = "data-exboost-slot";
-
 const API_VERSION = `v1`;
 const API_ORIGIN = `https://api.extensionboost.com`;
 
-interface IServeMessage {
+interface IExBoostExtensionMessageMessage {
   exboostSlotId: string;
   engineContext: EngineContext;
   options: IExBoostOptions;
 }
 
-interface IServeResponse {
-  exboostSlotData: IExboostSlotData;
+interface IExBoostExtensionMessageResponse {
+  exboostSlotData: IExBoostSlotData;
   success: boolean;
 }
 
@@ -18,11 +16,11 @@ interface IExBoostOptions {
   debug?: boolean;
 }
 
-export interface IExboostSlotData {
-  anchor_data: {
-    href: string,
-    text: string
-  }[]
+export interface IExBoostSlotData {
+  anchorData: {
+    href: string;
+    text: string;
+  }[];
 }
 
 enum EngineContext {
@@ -37,14 +35,14 @@ enum EngineContext {
 }
 
 class ExBoostEngine {
-  version: string;
-  windowIsDefined: boolean;
-  chromeGlobalIsDefined: boolean;
-  usesExtensionProtocol: boolean;
-  extensionId: string | null;
-  sessionId: string | null;
-  isManifestV2: boolean;
-  engineContext: EngineContext;
+  private version: string;
+  private windowIsDefined: boolean;
+  private chromeGlobalIsDefined: boolean;
+  private usesExtensionProtocol: boolean;
+  private extensionId: string | null;
+  private sessionId: string | null;
+  private isManifestV2: boolean;
+  private engineContext: EngineContext;
 
   constructor() {
     this.version = "VERSION_PLACEHOLDER";
@@ -105,27 +103,59 @@ class ExBoostEngine {
     }
   }
 
-  async loadSlotDataOrError({exboostSlotId}: {exboostSlotId: string}, options: IExBoostOptions = {}): Promise<IExboostSlotData>{
-    const message: IServeMessage = {
+  async renderSlotDataOrError(
+    {
+      exboostSlotId,
+      target,
+      containerClass,
+      linkClass,
+    }: {
+      exboostSlotId: string;
+      target: HTMLElement;
+      containerClass?: string;
+      linkClass?: string;
+    },
+    options: IExBoostOptions = {}
+  ): Promise<void> {
+    const slotData = await this.loadSlotDataOrError({ exboostSlotId });
+
+    target.innerHTML = `<div class="exboost-container ${containerClass ?? ""}">
+      ${slotData.anchorData
+        .map(
+          (data) =>
+            `<a class="exboost-link ${linkClass ?? ""}" href="${
+              data.href
+            }" target="_blank">${data.text}</a>`
+        )
+        .join("")}
+    </div>`;
+  }
+
+  async loadSlotDataOrError(
+    { exboostSlotId }: { exboostSlotId: string },
+    options: IExBoostOptions = {}
+  ): Promise<IExBoostSlotData> {
+    const outboundMessage: IExBoostExtensionMessageMessage = {
       exboostSlotId,
       engineContext: this.engineContext,
-      options
+      options,
+    };
+
+    const inboundMessage: IExBoostExtensionMessageResponse =
+      await chrome.runtime.sendMessage(outboundMessage);
+
+    if (!inboundMessage.success) {
+      throw new Error("Failed to load ExBoost slot data");
     }
 
-    const response: IServeResponse = await chrome.runtime.sendMessage(message);
-
-    if (!response.success) {
-      throw new Error('Failed to load ExBoost slot data');
-    }
-
-    return response.exboostSlotData;
+    return inboundMessage.exboostSlotData;
   }
 
   private initBackground() {
     this.sessionId = crypto.randomUUID();
 
     chrome.runtime.onMessage.addListener(
-      (message: IServeMessage, sender, sendResponse) => {
+      (message: IExBoostExtensionMessageMessage, sender, sendResponse) => {
         if (!Object.keys(message).includes("exboostSlotId")) {
           // This is not an exboost message
           return;
@@ -146,27 +176,24 @@ class ExBoostEngine {
         });
 
         fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
-          .then((response) => {
+          .then((response): Promise<IExBoostExtensionMessageResponse> => {
             if (response.status !== 200) {
-              // Don't fill the slot with an error response
-              return {
+              const payload: IExBoostExtensionMessageResponse = {
                 success: false,
-                slotData: []
+                exboostSlotData: {
+                  anchorData: [],
+                },
               };
+              // Don't fill the slot with an error response
+              return Promise.resolve(payload);
             }
 
-            return response.json().then((slotData) => ({
+            return response.json().then((data: IExBoostSlotData) => ({
               success: true,
-              slotData
+              exboostSlotData: data,
             }));
           })
-          .then(({success, slotData}) =>
-            sendResponse({
-              success, 
-              slotData
-            })
-          );
-
+          .then((payload) => sendResponse(payload));
 
         // Indicate that a response is coming
         return true;

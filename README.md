@@ -8,11 +8,18 @@ ExBoost is a collaborative network of browser extensions looking for more users.
 
 ExBoost extensions add promotional banners inside their extensions. These banners will show promotions for similar extensions available in the Chrome Web Store. Extensions in the ExBoost network promote each other.
 
-## Getting started
+## Installation
 
-### Option 1: Using the NPM package (recommended)
+You have two options for installation:
 
-1. Install the [exboost-js](https://www.npmjs.com/package/exboost-js) npm package.
+- Add the npm package
+- Add the .mjs file to your extension manually
+
+### Option A: Using the NPM package (recommended)
+
+1. Install the [exboost-js](https://www.npmjs.com/package/exboost-js) npm package:
+
+`npm install exboost-js`
 
 2. Import `exboost-js` in your background script
 
@@ -22,40 +29,9 @@ import "exboost-js";
 
 _background.js_
 
-3. Define an ExBoost slot by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot.
+### Option B: Include the .mjs file manually
 
-```
-<body>
-  <head>
-    iframe {
-      width: 600px;
-      height: 180px;
-    }
-  </head>
-  <section>
-    <h1>My extension!</h1>
-    <div>Extension content
-  </section>
-
-  <iframe data-exboost-slot="popup-slot-1"></iframe>
-</body>
-```
-
-_popup.html_
-
-4. Import `exboost-js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
-
-```
-import ExBoost from "exboost-js";
-
-ExBoost.init();
-```
-
-_popup.js_
-
-### Option 2: Include the JS file directly
-
-1. Download [exboost.js](https://raw.githubusercontent.com/classvsoftware/exboost.js/master/dist/exboost.js) and add it to your extension.
+1. Download [exboost.mjs](https://raw.githubusercontent.com/classvsoftware/exboost.js/master/dist/exboost.mjs) and add it to your extension.
 
 ```
 app/
@@ -64,68 +40,75 @@ app/
 ├── options.html
 └── scripts/
     ├── background.js
-    └── exboost.js
+    └── exboost.mjs
 ```
 
-2. Import `exboost.js` in your background script
+2. Import `exboost.mjs` in your background script
 
 ```
-import "scripts/exboost.js";
+import "scripts/exboost.mjs";
 ```
 
 _background.js_
 
-3. Define an ExBoost slot by adding `<iframe data-exboost-slot="SLOT_ID"></iframe>` to your extension's HTML. `SLOT_ID` should be unique to each slot.
+## Signup for ExBoost
+
+By default, ExBoost will just show recommendations from the Chrome Web Store. Sign up at [https://extensionboost.com/signup](https://extensionboost.com/signup) (Currently limited to beta users).
+
+After signing up, you will be able to register new ExBoost slot IDs.
+
+## Show ExBoost Slots
+
+You have two options for adding ExBoost links:
+
+- Let ExBoost render the links for you
+- Load ExBoost slot data and render them manually
+
+**NOTE: For both options, you are responsible for styling the links manually**
+
+### Option A: ExBoost auto rendering
+
+1. Include ExBoost wherever you need to render slots (Popup, Options page, Content Script, etc)
+
+`import ExBoost from "exboost-js";`
+
+2. Specify a target where ExBoost should render the links
+
+`<div class="slot"></div>`
+
+3. Render the slot:
 
 ```
-<body>
-  <head>
-    iframe {
-      width: 600px;
-      height: 180px;
-    }
-  </head>
-  <section>
-    <h1>My extension!</h1>
-    <div>Extension content
-  </section>
-
-  <iframe data-exboost-slot="popup-slot-1"></iframe>
-</body>
+ExBoost.renderSlotDataOrError({
+  exboostSlotId: 'demo-popup-id',
+  target: document.querySelector('.slot')
+});
 ```
 
-_popup.html_
+### Option B: ExBoost manual render
 
-4. Import `exboost.js` anywhere you want to show an ExBoost banner: in your popup, in an options page, or in a content script UI. Call `init()` to fill the slots.
+1. Include ExBoost wherever you need to render slots (Popup, Options page, Content Script, etc)
 
-```
-import ExBoost from "scripts/exboost.js";
+`import ExBoost from "exboost-js";`
 
-ExBoost.init();
-```
-
-_popup.js_
-
-## Troubleshooting
-
-Having trouble? Enable debug mode with `ExBoost.init({ debug: true })`. ExBoost will log to the console.
-
-## Using ExBoost with React
-
-`ExBoost.init()` should be called after the `<iframe>` exists. Example:
+2. Load the slot data:
 
 ```
-const MyComponent = () => {
-  useEffect(() => {
-    ExBoost.init();
-  }, []);
+const slotData = ExBoost.loadSlotDataOrError({
+  exboostSlotId: 'demo-popup-id'
+});
+```
 
-  return (
-    <div>
-      <iframe data-exboost-slot="popup-header-slot"></iframe>
-    </div>
-  );
-};
+3. Render the links however you want:
+
+```
+document.querySelector('.slot').innerHTML = slotData.anchorData
+  .map(
+    (data) =>
+      `<a href="${data.href
+      }" target="_blank">${data.text}</a>`
+  )
+  .join("");
 ```
 
 ## Examples
