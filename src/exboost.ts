@@ -6,19 +6,23 @@ const API_ORIGIN = `https://api.extensionboost.com`;
 interface IServeMessage {
   exboostSlotId: string;
   engineContext: EngineContext;
-  slotStyle: {
-    initialSlotWidth: string;
-    initialSlotHeight: string;
-    slotBackgroundColor: string;
-    slotFontColor: string;
-    slotFontSize: string;
-    slotFontFamily: string;
-  };
   options: IExBoostOptions;
+}
+
+interface IServeResponse {
+  exboostSlotData: IExboostSlotData;
+  success: boolean;
 }
 
 interface IExBoostOptions {
   debug?: boolean;
+}
+
+export interface IExboostSlotData {
+  anchor_data: {
+    href: string,
+    text: string
+  }[]
 }
 
 enum EngineContext {
@@ -101,81 +105,20 @@ class ExBoostEngine {
     }
   }
 
-  private isSlotFilled(element: HTMLIFrameElement): boolean {
-    return element!.contentDocument!.body.innerHTML.length > 0;
-  }
-
-  private fillAllExboostIframes(options: IExBoostOptions = {}) {
-    const exboostFrames = document.querySelectorAll(
-      `iframe[${EXBOOST_ATTRIBUTE}]`
-    ) as NodeListOf<HTMLIFrameElement>;
-
-    if (options.debug) {
-      console.log(`Detected ${exboostFrames.length} ExBoost frames`);
+  async loadSlotDataOrError({exboostSlotId}: {exboostSlotId: string}, options: IExBoostOptions = {}): Promise<IExboostSlotData>{
+    const message: IServeMessage = {
+      exboostSlotId,
+      engineContext: this.engineContext,
+      options
     }
 
-    const slotIds = new Set<string>();
-    for (const exboostFrame of exboostFrames) {
-      // Slot ID is to identify the traffic on the server
-      const exboostSlotId = exboostFrame.getAttribute(EXBOOST_ATTRIBUTE);
+    const response: IServeResponse = await chrome.runtime.sendMessage(message);
 
-      if (!exboostSlotId) {
-        if (options.debug) {
-          console.error("ExBoost slot is missing a slot ID");
-        }
-        continue;
-      }
-
-      if (slotIds.has(exboostSlotId)) {
-        console.error(`Detected duplicate ExBoost slot id: ${exboostSlotId}`);
-      }
-
-      slotIds.add(exboostSlotId);
-
-      const frameWidth = exboostFrame.offsetWidth;
-      const frameHeight = exboostFrame.offsetHeight;
-      const computedStyle = window.getComputedStyle(exboostFrame);
-
-      if (options.debug) {
-        if (frameWidth < 50 || frameHeight < 50) {
-          `Frame ${exboostSlotId} is too small and will not render: ${frameWidth}x${frameHeight}`;
-        }
-      }
-
-      // Frame has already been filled
-      if (this.isSlotFilled(exboostFrame)) {
-        if (options.debug) {
-          console.log(`Frame ${exboostSlotId} is already filled, skipping`);
-        }
-        continue;
-      }
-
-      const message: IServeMessage = {
-        exboostSlotId,
-        engineContext: this.engineContext,
-        slotStyle: {
-          initialSlotWidth: frameWidth.toString(),
-          initialSlotHeight: frameHeight.toString(),
-          slotBackgroundColor: computedStyle.backgroundColor,
-          slotFontColor: computedStyle.color,
-          slotFontSize: computedStyle.fontSize,
-          slotFontFamily: computedStyle.fontFamily,
-        },
-        options: {},
-      };
-
-      chrome.runtime.sendMessage(message, (response) => {
-        exboostFrame!.contentDocument!.body.innerHTML = response.html;
-
-        if (options.debug) {
-          if (response.html.length > 0) {
-            console.log(`Successfully filled ${exboostSlotId}`);
-          } else {
-            console.log(`Declined to fill ${exboostSlotId}`);
-          }
-        }
-      });
+    if (!response.success) {
+      throw new Error('Failed to load ExBoost slot data');
     }
+
+    return response.exboostSlotData;
   }
 
   private initBackground() {
@@ -190,7 +133,7 @@ class ExBoostEngine {
 
         const path = [
           API_VERSION,
-          "serve",
+          "links",
           this.extensionId,
           this.sessionId,
           message.engineContext,
@@ -200,36 +143,35 @@ class ExBoostEngine {
         const params = new URLSearchParams({
           version: this.version,
           publisherExtensionName: chrome.runtime.getManifest().name,
-          ...message.slotStyle,
         });
 
         fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
           .then((response) => {
             if (response.status !== 200) {
               // Don't fill the slot with an error response
-              return "";
+              return {
+                success: false,
+                slotData: []
+              };
             }
 
-            return response.text();
+            return response.json().then((slotData) => ({
+              success: true,
+              slotData
+            }));
           })
-          .then((html) =>
+          .then(({success, slotData}) =>
             sendResponse({
-              html,
+              success, 
+              slotData
             })
           );
+
 
         // Indicate that a response is coming
         return true;
       }
     );
-  }
-
-  init(options: IExBoostOptions = {}) {
-    if (options.debug) {
-      console.log(`Engine context: ${this.engineContext}`);
-    }
-
-    this.fillAllExboostIframes(options);
   }
 }
 

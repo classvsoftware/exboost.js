@@ -1,5 +1,16 @@
+export interface IExBoostOptions {
+  debug?: boolean;
+}
+
+export interface IExboostSlotData {
+  anchor_data: {
+    href: string;
+    text: string;
+  }[];
+}
+
 declare class ExBoostEngine {
-  init({ debug: boolean }): void;
+  loadSlotDataOrError({exboostSlotId}: {exboostSlotId: string}, options?: IExBoostOptions): Promise<IExboostSlotData>;
 }
 
 declare const ExBoost: ExBoostEngine;
