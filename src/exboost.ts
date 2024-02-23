@@ -161,16 +161,14 @@ class ExBoostEngine {
           return;
         }
 
-        const path = [
-          API_VERSION,
-          "links",
-          this.extensionId,
-          this.sessionId,
-          message.engineContext,
-          message.exboostSlotId,
-        ].join("/");
+        const path = [API_VERSION, "links"].join("/");
 
         const params = new URLSearchParams({
+          // This executes in the background, so these values will be defined
+          extensionId: this.extensionId!,
+          sessionId: this.sessionId!,
+          engineContext: message.engineContext,
+          slotId: message.exboostSlotId,
           version: this.version,
           publisherExtensionName: chrome.runtime.getManifest().name,
         });
