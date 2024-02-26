@@ -3,3 +3,4 @@ test
 *.config.js
 yarn.lock
 scripts
+docs
