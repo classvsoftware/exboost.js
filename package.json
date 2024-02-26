@@ -1,6 +1,6 @@
 {
   "name": "exboost-js",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "Package for adding promotional banners to your extensions with ExBoost",
   "main": "dist/exboost.cjs",
   "scripts": {
