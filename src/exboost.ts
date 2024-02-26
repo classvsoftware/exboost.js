@@ -1,70 +1,50 @@
-const API_VERSION = `v1`;
-const API_ORIGIN = `https://api.extensionboost.com`;
-
-interface IExBoostExtensionMessageMessage {
-  exboostSlotId: string;
-  engineContext: EngineContext;
-  options: IExBoostOptions;
-}
-
-interface IExBoostExtensionMessageResponse {
-  exboostSlotData: IExBoostSlotData;
-  success: boolean;
-}
-
-interface IExBoostOptions {
-  debug?: boolean;
-}
-
-export interface IExBoostSlotData {
-  anchorData: {
-    href: string;
-    text: string;
-  }[];
-}
-
-enum EngineContext {
-  BACKGROUND = "BACKGROUND",
-  CONTENT_SCRIPT = "CONTENT_SCRIPT",
-  EXTENSION_PAGE = "EXTENSION_PAGE",
-  POPUP = "POPUP",
-  OPTIONS = "OPTIONS",
-  SIDEBAR = "SIDEBAR",
-  DEVELOPER_TOOLS = "DEVELOPER_TOOLS",
-  UNIDENTIFIED_CONTEXT = "UNIDENTIFIED_CONTEXT",
-}
+import { API_ORIGIN, API_VERSION, EngineContext } from "./consts";
+import {
+  IExBoostExtensionMessageMessage,
+  IExBoostExtensionMessageResponse,
+  IExBoostOptions,
+  IExBoostSlotData,
+} from "./interfaces";
 
 class ExBoostEngine {
+  // Allow these properties to be externally controlled
+  apiOrigin: string;
+  
   private version: string;
   private windowIsDefined: boolean;
   private chromeGlobalIsDefined: boolean;
   private usesExtensionProtocol: boolean;
   private extensionId: string | null;
+  private extensionName: string | null;
   private sessionId: string | null;
-  private isManifestV2: boolean;
+  private isManifestV2: boolean | null;
   private engineContext: EngineContext;
 
   constructor() {
     this.version = "VERSION_PLACEHOLDER";
+    this.apiOrigin = API_ORIGIN;
     this.sessionId = null;
     this.windowIsDefined = typeof window !== "undefined";
     this.chromeGlobalIsDefined = typeof chrome !== "undefined";
-    this.isManifestV2 = chrome.runtime.getManifest().version === "2";
+    this.isManifestV2 = null;
     this.usesExtensionProtocol = this.windowIsDefined
       ? window.location.protocol === "chrome-extension:"
       : false;
 
     this.extensionId = null;
+    this.extensionName = null;
 
     if (this.chromeGlobalIsDefined) {
       this.extensionId = chrome.runtime.id;
+      this.extensionName = chrome.runtime.getManifest().name;
+      this.isManifestV2 = chrome.runtime.getManifest().version === "2";
     }
 
     if (
-      (!this.isManifestV2 &&
+      (this.isManifestV2 === false &&
         !this.windowIsDefined &&
         this.chromeGlobalIsDefined) ||
-      (this.isManifestV2 &&
+      (this.isManifestV2 === true &&
         this.windowIsDefined &&
         window === chrome.extension.getBackgroundPage())
     ) {
@@ -165,15 +145,15 @@ class ExBoostEngine {
 
         const params = new URLSearchParams({
           // This executes in the background, so these values will be defined
-          extensionId: this.extensionId!,
           sessionId: this.sessionId!,
           engineContext: message.engineContext,
           slotId: message.exboostSlotId,
           version: this.version,
-          publisherExtensionName: chrome.runtime.getManifest().name,
+          publisherExtensionId: this.extensionId!,
+          publisherExtensionName: this.extensionName!,
         });
 
-        fetch(`${API_ORIGIN}/${path}?nonce=${Date.now()}&${params.toString()}`)
+        fetch(`${this.apiOrigin}/${path}?nonce=${Date.now()}&${params.toString()}`)
           .then((response): Promise<IExBoostExtensionMessageResponse> => {
             if (response.status !== 200) {
               const payload: IExBoostExtensionMessageResponse = {
