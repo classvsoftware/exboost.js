@@ -1,3 +1,4 @@
+import { EngineContext } from "./consts";
 
 export interface IExBoostExtensionMessageMessage {
     exboostSlotId: string;
