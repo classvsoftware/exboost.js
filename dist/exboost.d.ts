@@ -1,18 +1,12 @@
-interface IExBoostOptions {
-    debug?: boolean;
-}
-export interface IExBoostSlotData {
-    anchorData: {
-        href: string;
-        text: string;
-    }[];
-}
+import { IExBoostOptions, IExBoostSlotData } from "./interfaces";
 declare class ExBoostEngine {
+    apiOrigin: string;
     private version;
     private windowIsDefined;
     private chromeGlobalIsDefined;
     private usesExtensionProtocol;
     private extensionId;
+    private extensionName;
     private sessionId;
     private isManifestV2;
     private engineContext;
