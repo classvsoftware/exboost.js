@@ -9,7 +9,7 @@ import {
 class ExBoostEngine {
   // Allow these properties to be externally controlled
   apiOrigin: string;
-  
+
   private version: string;
   private windowIsDefined: boolean;
   private chromeGlobalIsDefined: boolean;
@@ -115,6 +115,10 @@ class ExBoostEngine {
     { exboostSlotId }: { exboostSlotId: string },
     options: IExBoostOptions = {}
   ): Promise<IExBoostSlotData> {
+    if (!exboostSlotId) {
+      throw new Error("Must provide exboostSlotId");
+    }
+
     const outboundMessage: IExBoostExtensionMessageMessage = {
       exboostSlotId,
       engineContext: this.engineContext,
@@ -153,7 +157,9 @@ class ExBoostEngine {
           publisherExtensionName: this.extensionName!,
         });
 
-        fetch(`${this.apiOrigin}/${path}?nonce=${Date.now()}&${params.toString()}`)
+        fetch(
+          `${this.apiOrigin}/${path}?nonce=${Date.now()}&${params.toString()}`
+        )
           .then((response): Promise<IExBoostExtensionMessageResponse> => {
             if (response.status !== 200) {
               const payload: IExBoostExtensionMessageResponse = {
